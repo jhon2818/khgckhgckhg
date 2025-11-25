@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Calculadora com Histórico</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background-color: white;
+        padding: 20px;
+        min-height: 100vh;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      /* Menu de Navegação */
+      .nav-menu {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 30px;
+      }
+
+      .nav-btn {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 24px;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+      }
+
+      .nav-btn.active {
+        background-color: #60a5fa;
+        color: white;
+      }
+
+      .nav-btn:not(.active) {
+        background-color: #e5e7eb;
+        color: #374151;
+      }
+
+      .nav-btn:not(.active):hover {
+        background-color: #d1d5db;
+      }
+
+      .badge {
+        background-color: #ef4444;
+        color: white;
+        font-size: 12px;
+        padding: 2px 8px;
+        border-radius: 12px;
+      }
+
+      /* Container Principal */
+      .calc-container,
+      .history-container {
+        background-color: #f3f4f6;
+        border-radius: 16px;
+        padding: 30px;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        border: 1px solid #e5e7eb;
+      }
+
+      .hidden {
+        display: none;
+      }
+
+      h1 {
+        color: #1f2937;
+        font-size: 32px;
+        margin-bottom: 30px;
+        text-align: center;
+      }
+
+      /* Display da Calculadora */
+      .display {
+        background-color: white;
+        border: 2px solid #d1d5db;
+        border-radius: 8px;
+        padding: 24px;
+        margin-bottom: 24px;
+      }
+
+      .operation-text {
+        color: #3b82f6;
+        font-size: 14px;
+        margin-bottom: 5px;
+        min-height: 20px;
+      }
+
+      .display-value {
+        color: #1f2937;
+        font-size: 36px;
+        font-weight: bold;
+        text-align: right;
+        word-wrap: break-word;
+      }
+
+      /* Grid de Botões */
+      .buttons-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+      }
+
+      .btn {
+        height: 64px;
+        border: none;
+        border-radius: 8px;
+        font-size: 18px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        color: white;
+      }
+
+      .btn:hover {
+        transform: scale(1.05);
+      }
+
+      .btn:active {
+        transform: scale(0.95);
+      }
+
+      .btn-clear {
+        background-color: #ef4444;
+      }
+
+      .btn-clear:hover {
+        background-color: #dc2626;
+      }
+
+      .btn-delete {
+        background-color: #f97316;
+      }
+
+      .btn-delete:hover {
+        background-color: #ea580c;
+      }
+
+      .btn-operator {
+        background-color: #60a5fa;
+      }
+
+      .btn-operator:hover {
+        background-color: #3b82f6;
+      }
+
+      .btn-number {
+        background-color: #93c5fd;
+      }
+
+      .btn-number:hover {
+        background-color: #60a5fa;
+      }
+
+      .btn-equals {
+        background-color: #22c55e;
+        grid-row: span 2;
+      }
+
+      .btn-equals:hover {
+        background-color: #16a34a;
+      }
+
+      .btn-wide {
+        grid-column: span 2;
+      }
+
+      /* Histórico */
+      .history-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+      }
+
+      .btn-clear-history {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 16px;
+        background-color: #ef4444;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+      }
+
+      .btn-clear-history:hover {
+        background-color: #dc2626;
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 80px 20px;
+      }
+
+      .empty-state svg {
+        width: 64px;
+        height: 64px;
+        margin: 0 auto 16px;
+        opacity: 0.3;
+      }
+
+      .empty-state p {
+        color: #6b7280;
+        font-size: 18px;
+        margin-bottom: 8px;
+      }
+
+      .empty-state small {
+        color: #9ca3af;
+        font-size: 14px;
+      }
+
+      .history-list {
+        max-height: 600px;
+        overflow-y: auto;
+      }
+
+      .history-item {
+        background-color: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 12px;
+        transition: all 0.3s;
+      }
+
+      .history-item:hover {
+        background-color: #f9fafb;
+      }
+
+      .history-date {
+        color: #3b82f6;
+        font-size: 14px;
+        margin-bottom: 5px;
+      }
+
+      .history-expression {
+        color: #1f2937;
+        font-size: 20px;
+        font-weight: 600;
+        margin-bottom: 5px;
+      }
+
+      .history-result {
+        color: #059669;
+        font-size: 24px;
+        font-weight: bold;
+      }
+
+      .history-footer {
+        text-align: center;
+        color: #6b7280;
+        font-size: 14px;
+        margin-top: 24px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- Menu de Navegação -->
+      <div class="nav-menu">
+        <button class="nav-btn active" onclick="mostrarPagina('calculadora')">
+          <span>📱</span>
+          Calculadora
+        </button>
+        <button class="nav-btn" onclick="mostrarPagina('historico')">
+          <span>📋</span>
+          Histórico
+          <span class="badge hidden" id="historico-badge">0</span>
+        </button>
+      </div>
+
+      <!-- Página da Calculadora -->
+      <div id="pagina-calculadora" class="calc-container">
+        <h1>Calculadora</h1>
+
+        <div class="display">
+          <div class="operation-text" id="operacao-texto"></div>
+          <div class="display-value" id="display">0</div>
+        </div>
+
+        <div class="buttons-grid">
+          <button class="btn btn-clear" onclick="limpar()">C</button>
+          <button class="btn btn-delete" onclick="deletar()">⌫</button>
+          <button class="btn btn-operator" onclick="selecionarOperacao('÷')">
+            ÷
+          </button>
+          <button class="btn btn-operator" onclick="selecionarOperacao('×')">
+            ×
+          </button>
+
+          <button class="btn btn-number" onclick="digitarNumero('7')">7</button>
+          <button class="btn btn-number" onclick="digitarNumero('8')">8</button>
+          <button class="btn btn-number" onclick="digitarNumero('9')">9</button>
+          <button class="btn btn-operator" onclick="selecionarOperacao('-')">
+            -
+          </button>
+
+          <button class="btn btn-number" onclick="digitarNumero('4')">4</button>
+          <button class="btn btn-number" onclick="digitarNumero('5')">5</button>
+          <button class="btn btn-number" onclick="digitarNumero('6')">6</button>
+          <button class="btn btn-operator" onclick="selecionarOperacao('+')">
+            +
+          </button>
+
+          <button class="btn btn-number" onclick="digitarNumero('1')">1</button>
+          <button class="btn btn-number" onclick="digitarNumero('2')">2</button>
+          <button class="btn btn-number" onclick="digitarNumero('3')">3</button>
+          <button class="btn btn-equals" onclick="calcularResultado()">
+            =
+          </button>
+
+          <button class="btn btn-number btn-wide" onclick="digitarNumero('0')">
+            0
+          </button>
+          <button class="btn btn-number" onclick="digitarPonto()">.</button>
+        </div>
+      </div>
+
+      <!-- Página do Histórico -->
+      <div id="pagina-historico" class="history-container hidden">
+        <div class="history-header">
+          <h1>Histórico de Operações</h1>
+          <button
+            class="btn-clear-history hidden"
+            id="btn-limpar-historico"
+            onclick="limparHistorico()"
+          >
+            <span>🗑️</span>
+            Limpar Tudo
+          </button>
+        </div>
+
+        <div id="historico-vazio" class="empty-state">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+            ></path>
+          </svg>
+          <p>Nenhuma operação realizada ainda</p>
+          <small>Use a calculadora para começar</small>
+        </div>
+
+        <div class="history-list" id="lista-historico"></div>
+
+        <div class="history-footer hidden" id="historico-footer">
+          Total de operações: <span id="total-operacoes">0</span>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Variáveis globais
+      let display = "0";
+      let valorAnterior = null;
+      let operacao = null;
+      let novoNumero = true;
+      let historico = [];
+
+      // Atualizar display
+      function atualizarDisplay() {
+        document.getElementById("display").textContent = display;
+
+        if (operacao && valorAnterior !== null) {
+          document.getElementById(
+            "operacao-texto"
+          ).textContent = `${valorAnterior} ${operacao}`;
+        } else {
+          document.getElementById("operacao-texto").textContent = "";
+        }
+      }
+
+      // Digitar número
+      function digitarNumero(num) {
+        if (novoNumero) {
+          display = num;
+          novoNumero = false;
+        } else {
+          display = display === "0" ? num : display + num;
+        }
+        atualizarDisplay();
+      }
+
+      // Digitar ponto decimal
+      function digitarPonto() {
+        if (novoNumero) {
+          display = "0.";
+          novoNumero = false;
+        } else if (!display.includes(".")) {
+          display += ".";
+        }
+        atualizarDisplay();
+      }
+
+      // Limpar tudo
+      function limpar() {
+        display = "0";
+        valorAnterior = null;
+        operacao = null;
+        novoNumero = true;
+        atualizarDisplay();
+      }
+
+      // Deletar último dígito
+      function deletar() {
+        if (display.length > 1) {
+          display = display.slice(0, -1);
+        } else {
+          display = "0";
+        }
+        atualizarDisplay();
+      }
+
+      // Selecionar operação
+      function selecionarOperacao(op) {
+        const valorAtual = parseFloat(display);
+
+        if (valorAnterior === null) {
+          valorAnterior = valorAtual;
+        } else if (operacao) {
+          const resultado = calcular(valorAnterior, valorAtual, operacao);
+          display = String(resultado);
+          valorAnterior = resultado;
+        }
+
+        operacao = op;
+        novoNumero = true;
+        atualizarDisplay();
+      }
+
+      // Calcular
+      function calcular(a, b, op) {
+        switch (op) {
+          case "+":
+            return a + b;
+          case "-":
+            return a - b;
+          case "×":
+            return a * b;
+          case "÷":
+            return b !== 0 ? a / b : "Erro";
+          default:
+            return b;
+        }
+      }
+
+      // Calcular resultado
+      function calcularResultado() {
+        if (operacao && valorAnterior !== null) {
+          const valorAtual = parseFloat(display);
+          const resultado = calcular(valorAnterior, valorAtual, operacao);
+
+          const expressao = `${valorAnterior} ${operacao} ${valorAtual}`;
+          adicionarAoHistorico(expressao, resultado);
+
+          display = String(resultado);
+          valorAnterior = null;
+          operacao = null;
+          novoNumero = true;
+          atualizarDisplay();
+        }
+      }
+
+      // Adicionar ao histórico
+      function adicionarAoHistorico(expressao, resultado) {
+        const novaEntrada = {
+          id: Date.now(),
+          expressao: expressao,
+          resultado: resultado,
+          data: new Date().toLocaleString("pt-BR"),
+        };
+
+        historico.unshift(novaEntrada);
+        atualizarHistorico();
+        atualizarBadge();
+      }
+
+      // Atualizar histórico na tela
+      function atualizarHistorico() {
+        const listaHistorico = document.getElementById("lista-historico");
+        const historicoVazio = document.getElementById("historico-vazio");
+        const btnLimpar = document.getElementById("btn-limpar-historico");
+        const historicoFooter = document.getElementById("historico-footer");
+        const totalOperacoes = document.getElementById("total-operacoes");
+
+        if (historico.length === 0) {
+          listaHistorico.innerHTML = "";
+          historicoVazio.classList.remove("hidden");
+          btnLimpar.classList.add("hidden");
+          historicoFooter.classList.add("hidden");
+        } else {
+          historicoVazio.classList.add("hidden");
+          btnLimpar.classList.remove("hidden");
+          historicoFooter.classList.remove("hidden");
+          totalOperacoes.textContent = historico.length;
+
+          listaHistorico.innerHTML = historico
+            .map(
+              (item) => `
+                    <div class="history-item">
+                        <div class="history-date">${item.data}</div>
+                        <div class="history-expression">${item.expressao}</div>
+                        <div class="history-result">= ${item.resultado}</div>
+                    </div>
+                `
+            )
+            .join("");
+        }
+      }
+
+      // Limpar histórico
+      function limparHistorico() {
+        historico = [];
+        atualizarHistorico();
+        atualizarBadge();
+      }
+
+      // Atualizar badge do histórico
+      function atualizarBadge() {
+        const badge = document.getElementById("historico-badge");
+        if (historico.length > 0) {
+          badge.textContent = historico.length;
+          badge.classList.remove("hidden");
+        } else {
+          badge.classList.add("hidden");
+        }
+      }
+
+      // Mostrar página
+      function mostrarPagina(pagina) {
+        const paginaCalculadora = document.getElementById("pagina-calculadora");
+        const paginaHistorico = document.getElementById("pagina-historico");
+        const botoes = document.querySelectorAll(".nav-btn");
+
+        if (pagina === "calculadora") {
+          paginaCalculadora.classList.remove("hidden");
+          paginaHistorico.classList.add("hidden");
+          botoes[0].classList.add("active");
+          botoes[1].classList.remove("active");
+        } else {
+          paginaCalculadora.classList.add("hidden");
+          paginaHistorico.classList.remove("hidden");
+          botoes[0].classList.remove("active");
+          botoes[1].classList.add("active");
+        }
+      }
+
+      // Suporte para teclado
+      document.addEventListener("keydown", function (e) {
+        if (
+          document
+            .getElementById("pagina-calculadora")
+            .classList.contains("hidden")
+        )
+          return;
+
+        if (e.key >= "0" && e.key <= "9") {
+          digitarNumero(e.key);
+        } else if (e.key === ".") {
+          digitarPonto();
+        } else if (
+          e.key === "+" ||
+          e.key === "-" ||
+          e.key === "*" ||
+          e.key === "/"
+        ) {
+          const op = e.key === "*" ? "×" : e.key === "/" ? "÷" : e.key;
+          selecionarOperacao(op);
+        } else if (e.key === "Enter" || e.key === "=") {
+          calcularResultado();
+        } else if (e.key === "Escape") {
+          limpar();
+        } else if (e.key === "Backspace") {
+          deletar();
+        }
+      });
+
+      // Inicializar
+      atualizarDisplay();
+    </script>
+  </body>
+</html>
